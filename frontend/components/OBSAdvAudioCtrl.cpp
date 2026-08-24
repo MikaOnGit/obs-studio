@@ -78,7 +78,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 
 	OBSBasic *main = OBSBasic::Get();
 
-	QIcon sourceIcon = main->GetSourceIcon(obs_source_get_id(source));
+	QIcon sourceIcon = main->GetSourceIcon(source);
 	QPixmap pixmap = sourceIcon.pixmap(QSize(16, 16));
 	iconLabel->setPixmap(pixmap);
 	iconLabel->setFixedSize(16, 16);
