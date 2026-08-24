@@ -569,6 +569,68 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 	return menu;
 }
 
+QMenu *OBSBasic::AddSourceIconMenu(QMenu *menu, obs_source_t *source)
+{
+	OBSDataAutoRelease privSettings = obs_source_get_private_settings(source);
+	bool hasOverride = obs_data_has_user_value(privSettings, "icon-type-override");
+	int currentType = (int)obs_data_get_int(privSettings, "icon-type-override");
+
+	OBSSource sourceRef(source);
+
+	QAction *action = menu->addAction(QTStr("ChangeIcon.Default"), this,
+					  [this, sourceRef]() { SetSourceIconOverride(sourceRef, 0, true); });
+	action->setCheckable(true);
+	action->setChecked(!hasOverride);
+
+	menu->addSeparator();
+
+	static const struct {
+		int type;
+		const char *name;
+	} iconTypes[] = {
+		{OBS_ICON_TYPE_IMAGE, "ChangeIcon.Image"},
+		{OBS_ICON_TYPE_COLOR, "ChangeIcon.Color"},
+		{OBS_ICON_TYPE_SLIDESHOW, "ChangeIcon.Slideshow"},
+		{OBS_ICON_TYPE_AUDIO_INPUT, "ChangeIcon.AudioInput"},
+		{OBS_ICON_TYPE_AUDIO_OUTPUT, "ChangeIcon.AudioOutput"},
+		{OBS_ICON_TYPE_PROCESS_AUDIO_OUTPUT, "ChangeIcon.ProcessAudioOutput"},
+		{OBS_ICON_TYPE_DESKTOP_CAPTURE, "ChangeIcon.DesktopCapture"},
+		{OBS_ICON_TYPE_WINDOW_CAPTURE, "ChangeIcon.WindowCapture"},
+		{OBS_ICON_TYPE_GAME_CAPTURE, "ChangeIcon.GameCapture"},
+		{OBS_ICON_TYPE_CAMERA, "ChangeIcon.Camera"},
+		{OBS_ICON_TYPE_TEXT, "ChangeIcon.Text"},
+		{OBS_ICON_TYPE_MEDIA, "ChangeIcon.Media"},
+		{OBS_ICON_TYPE_BROWSER, "ChangeIcon.Browser"},
+		{ICON_TYPE_SCENE, "ChangeIcon.Scene"},
+		{ICON_TYPE_GROUP, "ChangeIcon.Group"},
+		{OBS_ICON_TYPE_UNKNOWN, "ChangeIcon.Generic"},
+	};
+
+	for (const auto &entry : iconTypes) {
+		int type = entry.type;
+		action = menu->addAction(GetIconFromType(type), QTStr(entry.name), this,
+					 [this, sourceRef, type]() { SetSourceIconOverride(sourceRef, type, false); });
+		action->setCheckable(true);
+		action->setChecked(hasOverride && currentType == type);
+	}
+
+	return menu;
+}
+
+void OBSBasic::SetSourceIconOverride(obs_source_t *source, int iconType, bool clearOverride)
+{
+	OBSDataAutoRelease privSettings = obs_source_get_private_settings(source);
+
+	if (clearOverride) {
+		obs_data_unset_user_value(privSettings, "icon-type-override");
+	} else {
+		obs_data_set_int(privSettings, "icon-type-override", iconType);
+	}
+
+	ui->sources->UpdateIcons();
+	UpdateContextBarDeferred(true);
+}
+
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
 	QMenu popup(this);
@@ -578,6 +640,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	delete blendingMethodMenu;
 	delete blendingModeMenu;
 	delete colorMenu;
+	delete iconMenu;
 	delete colorWidgetAction;
 	delete colorSelect;
 	delete deinterlaceMenu;
@@ -666,6 +729,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			colorWidgetAction = new QWidgetAction(colorMenu);
 			colorSelect = new ColorSelect(colorMenu);
 			popup.addMenu(AddBackgroundColorMenu(colorMenu, colorWidgetAction, colorSelect, sceneItem));
+
+			iconMenu = new QMenu(QTStr("ChangeIcon"));
+			popup.addMenu(AddSourceIconMenu(iconMenu, source));
 
 			if (hasAudio) {
 				bool isHidden = isHiddenInMixer(source);

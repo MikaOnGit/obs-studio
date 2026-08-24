@@ -563,7 +563,14 @@ private slots:
 	void SetAudioProcessOutputIcon(const QIcon &icon);
 
 public:
+	/* Pseudo icon types selectable as per-source icon overrides; values
+	 * must not collide with obs_icon_type */
+	static constexpr int ICON_TYPE_SCENE = 1000;
+	static constexpr int ICON_TYPE_GROUP = 1001;
+
 	QIcon GetSourceIcon(const char *id) const;
+	QIcon GetSourceIcon(obs_source_t *source) const;
+	QIcon GetIconFromType(int iconType, const char *id = nullptr) const;
 	QIcon GetGroupIcon() const;
 	QIcon GetSceneIcon() const;
 	QIcon GetCustomIcon(const char *id) const;
@@ -591,6 +598,7 @@ private:
 	QPointer<QMenu> blendingMethodMenu;
 	QPointer<QMenu> blendingModeMenu;
 	QPointer<QMenu> colorMenu;
+	QPointer<QMenu> iconMenu;
 	QPointer<QMenu> deinterlaceMenu;
 
 	QPointer<QWidgetAction> colorWidgetAction;
@@ -1246,6 +1254,8 @@ public:
 	QMenu *AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction, ColorSelect *select,
 				      obs_sceneitem_t *item);
+	QMenu *AddSourceIconMenu(QMenu *menu, obs_source_t *source);
+	void SetSourceIconOverride(obs_source_t *source, int iconType, bool clearOverride);
 	void CreateSourcePopupMenu(int idx, bool preview);
 
 	void actionOpenSourceFilters();

@@ -19,11 +19,39 @@
 
 #include "OBSBasic.hpp"
 
+#include <cstring>
+
 QIcon OBSBasic::GetSourceIcon(const char *id) const
 {
-	obs_icon_type type = obs_source_get_icon_type(id);
+	return GetIconFromType(obs_source_get_icon_type(id), id);
+}
 
-	switch (type) {
+QIcon OBSBasic::GetSourceIcon(obs_source_t *source) const
+{
+	if (!source) {
+		return GetDefaultIcon();
+	}
+
+	const char *id = obs_source_get_id(source);
+
+	OBSDataAutoRelease privSettings = obs_source_get_private_settings(source);
+	if (obs_data_has_user_value(privSettings, "icon-type-override")) {
+		return GetIconFromType((int)obs_data_get_int(privSettings, "icon-type-override"), id);
+	}
+
+	if (strcmp(id, "scene") == 0) {
+		return GetSceneIcon();
+	}
+	if (strcmp(id, "group") == 0) {
+		return GetGroupIcon();
+	}
+
+	return GetSourceIcon(id);
+}
+
+QIcon OBSBasic::GetIconFromType(int iconType, const char *id) const
+{
+	switch (iconType) {
 	case OBS_ICON_TYPE_IMAGE:
 		return GetImageIcon();
 	case OBS_ICON_TYPE_COLOR:
@@ -49,9 +77,13 @@ QIcon OBSBasic::GetSourceIcon(const char *id) const
 	case OBS_ICON_TYPE_BROWSER:
 		return GetBrowserIcon();
 	case OBS_ICON_TYPE_CUSTOM:
-		return GetCustomIcon(id);
+		return id ? GetCustomIcon(id) : GetDefaultIcon();
 	case OBS_ICON_TYPE_PROCESS_AUDIO_OUTPUT:
 		return GetAudioProcessOutputIcon();
+	case ICON_TYPE_SCENE:
+		return GetSceneIcon();
+	case ICON_TYPE_GROUP:
+		return GetGroupIcon();
 	default:
 		return GetDefaultIcon();
 	}

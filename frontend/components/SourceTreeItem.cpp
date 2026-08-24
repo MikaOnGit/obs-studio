@@ -48,20 +48,11 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 	}
 
 	OBSBasic *main = OBSBasic::Get();
-	const char *id = obs_source_get_id(source);
 
 	bool sourceVisible = obs_sceneitem_visible(sceneitem);
 
 	if (tree->iconsVisible) {
-		QIcon icon;
-
-		if (strcmp(id, "scene") == 0) {
-			icon = main->GetSceneIcon();
-		} else if (strcmp(id, "group") == 0) {
-			icon = main->GetGroupIcon();
-		} else {
-			icon = main->GetSourceIcon(id);
-		}
+		QIcon icon = main->GetSourceIcon(source);
 
 		QPixmap pixmap = icon.pixmap(QSize(16, 16));
 
